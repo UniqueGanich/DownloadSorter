@@ -21,16 +21,7 @@ export bool sorter()
     const std::filesystem::path downloads = *downloads_opt;
     std::println("{}Папка «Загрузки»:{} {}\n", BOLD, RESET, downloads.string());
 
-    std::set<std::filesystem::path> existing_folders;
     std::error_code ec;
-
-    for (auto folder_name : kCategoryFolders)
-    {
-        std::filesystem::path p = downloads / folder_name;
-        if (std::filesystem::exists(p, ec)) existing_folders.insert(p);
-    }
-    std::filesystem::path dup_dir = downloads / kDuplicateFolder;
-    if (std::filesystem::exists(dup_dir, ec)) existing_folders.insert(dup_dir);
 
     // ПРОХОД 1: Сортировка
     auto scan_res = ScanDownloads(downloads);
@@ -49,11 +40,15 @@ export bool sorter()
     std::println("");
     int dedupe_count = Deduplicate(downloads, scan_res_dedupe.files);
 
-    // Уборка пустых папок
+    // ПРОХОД 3: Уборка пустых папок
     int removed_folders = 0;
-    for (auto folder_name : kCategoryFolders) {
+    std::filesystem::path dup_dir = downloads / kDuplicateFolder;
+
+    for (auto folder_name : kCategoryFolders)
+    {
         std::filesystem::path p = downloads / folder_name;
-        if (existing_folders.find(p) == existing_folders.end() && std::filesystem::exists(p, ec) && std::filesystem::is_empty(p, ec))
+
+        if (std::filesystem::exists(p, ec) && std::filesystem::is_empty(p, ec))
         {
             std::filesystem::remove(p, ec);
             if (!ec)
@@ -61,9 +56,11 @@ export bool sorter()
                 std::println("{}  [Удалена пустая папка] {}{}", CYAN, std::filesystem::path(folder_name).string(), RESET);
                 removed_folders++;
             }
+            else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}", RED, std::filesystem::path(folder_name).string(), ec.message(), RESET);
         }
     }
-    if (existing_folders.find(dup_dir) == existing_folders.end() && std::filesystem::exists(dup_dir, ec) && std::filesystem::is_empty(dup_dir, ec))
+
+    if (std::filesystem::exists(dup_dir, ec) && std::filesystem::is_empty(dup_dir, ec))
     {
         std::filesystem::remove(dup_dir, ec);
         if (!ec)
@@ -71,6 +68,7 @@ export bool sorter()
             std::println("{}  [Удалена пустая папка] +0_Duplicate{}", CYAN, RESET);
             removed_folders++;
         }
+        else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить +0_Duplicate: {}{}", RED, ec.message(), RESET);
     }
 
     // ИТОГИ
