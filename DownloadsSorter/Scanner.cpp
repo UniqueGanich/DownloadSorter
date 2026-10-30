@@ -53,7 +53,9 @@ export ScanResult ScanDownloads(const std::filesystem::path& downloads)
     for (auto folder_name : kCategoryFolders)
     {
         std::filesystem::path folder_path = downloads / folder_name;
-        if (!std::filesystem::exists(folder_path) || !std::filesystem::is_directory(folder_path)) continue;
+
+        ec.clear();
+        if (!std::filesystem::is_directory(folder_path, ec) || ec) continue;
 
         auto it_rec = std::filesystem::recursive_directory_iterator(folder_path, dir_options, ec);
         auto end_rec = std::filesystem::recursive_directory_iterator();
@@ -66,7 +68,7 @@ export ScanResult ScanDownloads(const std::filesystem::path& downloads)
 
             it_rec.increment(ec);
             if (ec) {
-                std::println(std::cerr, "{}  [Ошибка] Прерван обход папки {}{}", RED, std::filesystem::path(folder_name).string(), RESET);
+                std::println(std::cerr, "{}  [Ошибка] Прерван обход папки {}{}", RED, ToUtf8(std::wstring(folder_name)), RESET);
                 break;
             }
         }

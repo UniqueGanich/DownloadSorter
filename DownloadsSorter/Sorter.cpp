@@ -19,7 +19,7 @@ export bool sorter()
     if (!downloads_opt) return false;
 
     const std::filesystem::path downloads = *downloads_opt;
-    std::println("{}Папка «Загрузки»:{} {}\n", BOLD, RESET, downloads.string());
+    std::println("{}Папка «Загрузки»:{} {}\n", BOLD, RESET, ToUtf8(downloads.wstring()));
 
     std::error_code ec;
 
@@ -53,10 +53,10 @@ export bool sorter()
             std::filesystem::remove(p, ec);
             if (!ec)
             {
-                std::println("{}  [Удалена пустая папка] {}{}", CYAN, std::filesystem::path(folder_name).string(), RESET);
+                std::println("{}  [Удалена пустая папка] {}{}", CYAN, ToUtf8(std::wstring(folder_name)), RESET);
                 removed_folders++;
             }
-            else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}", RED, std::filesystem::path(folder_name).string(), ec.message(), RESET);
+            else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}", RED, ToUtf8(std::wstring(folder_name)), ec.message(), RESET);
         }
     }
 
@@ -65,10 +65,10 @@ export bool sorter()
         std::filesystem::remove(dup_dir, ec);
         if (!ec)
         {
-            std::println("{}  [Удалена пустая папка] +0_Duplicate{}", CYAN, RESET);
+            std::println("{}  [Удалена пустая папка] {}{}", CYAN, ToUtf8(std::wstring(kDuplicateFolder)), RESET);
             removed_folders++;
         }
-        else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить +0_Duplicate: {}{}", RED, ec.message(), RESET);
+        else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}", RED, ToUtf8(std::wstring(kDuplicateFolder)), ec.message(), RESET);
     }
 
     // ИТОГИ
