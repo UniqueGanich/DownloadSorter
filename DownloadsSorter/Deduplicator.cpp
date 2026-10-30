@@ -6,8 +6,52 @@ import Mover;
 
 struct FileInfo {
     std::filesystem::path path;
-    std::uintmax_t size = 0; // <-- ИСПРАВЛЕНО: инициализация по умолчанию
-    std::filesystem::file_time_type mtime{}; // <-- ИСПРАВЛЕНО: инициализация по умолчанию
+    std::uintmax_t size = 0;
+    std::filesystem::file_time_type mtime{};
+};
+
+class ThreadPool {
+public:
+    ThreadPool(size_t threads) : stop(false) {
+        for (size_t i = 0; i < threads; ++i)
+            workers.emplace_back([this] {
+            for (;;) {
+                std::function<void()> task;
+                {
+                    std::unique_lock<std::mutex> lock(this->queue_mutex);
+                    this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
+                    if (this->stop && this->tasks.empty()) return;
+                    task = std::move(this->tasks.front());
+                    this->tasks.pop();
+                }
+                task();
+            }
+                });
+    }
+
+    template<class F>
+    void enqueue(F&& f) {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            tasks.emplace(std::forward<F>(f));
+        }
+        condition.notify_one();
+    }
+
+    ~ThreadPool() {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            stop = true;
+        }
+        condition.notify_all();
+        for (std::thread& worker : workers) worker.join();
+    }
+private:
+    std::vector<std::thread> workers;
+    std::queue<std::function<void()>> tasks;
+    std::mutex queue_mutex;
+    std::condition_variable condition;
+    bool stop;
 };
 
 static const FileInfo& PickKeeper(const std::vector<FileInfo>& group, const std::filesystem::path& downloads) {
@@ -50,54 +94,55 @@ export int Deduplicate(const std::filesystem::path& downloads, const std::vector
     std::unordered_map<std::uintmax_t, std::vector<FileInfo>> size_groups;
     for (const auto& fi : file_infos) size_groups[fi.size].push_back(fi);
 
-    unsigned int max_threads = std::thread::hardware_concurrency();
-    if (max_threads == 0) max_threads = 4;
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    if (num_threads == 0) num_threads = 4;
+    ThreadPool pool(num_threads);
 
     for (auto& [_, group] : size_groups) {
         if (group.size() < 2) continue;
 
+        // ЭТАП 1: Быстрый хэш
         std::unordered_map<std::string, std::vector<FileInfo>> quick_groups;
+        std::mutex quick_mutex;
+        std::latch quick_latch(group.size());
 
-        // ЭТАП 1: Быстрый хэш (4 КБ) - запускаем пачками
-        for (size_t i = 0; i < group.size(); i += max_threads) {
-            std::vector<std::future<std::pair<FileInfo, std::optional<std::array<unsigned char, 32>>>>> futures;
-            size_t end = (std::min)(i + max_threads, group.size());
-
-            for (size_t j = i; j < end; ++j) {
-                futures.push_back(std::async(std::launch::async, [fi = group[j]]() {
-                    return std::make_pair(fi, GetQuickHash(fi.path));
-                    }));
-            }
-
-            for (auto& fut : futures) {
-                auto [fi, hash_opt] = fut.get();
-                if (hash_opt) quick_groups[HashToString(*hash_opt)].push_back(fi);
-            }
+        for (const auto& fi : group) {
+            pool.enqueue([fi, &quick_groups, &quick_mutex, &quick_latch]() {
+                try {
+                    auto hash = GetQuickHash(fi.path);
+                    if (hash) {
+                        std::lock_guard lock(quick_mutex);
+                        quick_groups[HashToString(*hash)].push_back(fi);
+                    }
+                }
+                catch (...) { /* Игнорируем сбой, чтобы не зависнуть */ }
+                quick_latch.count_down();
+                });
         }
+        quick_latch.wait();
 
-        // ЭТАП 2: Полный хэш
         for (auto& [q_hash, q_group] : quick_groups) {
             if (q_group.size() < 2) continue;
 
             std::unordered_map<std::string, std::vector<FileInfo>> full_groups;
+            std::mutex full_mutex;
+            std::latch full_latch(q_group.size());
 
-            for (size_t i = 0; i < q_group.size(); i += max_threads) {
-                std::vector<std::future<std::pair<FileInfo, std::optional<std::array<unsigned char, 32>>>>> futures;
-                size_t end = (std::min)(i + max_threads, q_group.size());
-
-                for (size_t j = i; j < end; ++j) {
-                    futures.push_back(std::async(std::launch::async, [fi = q_group[j]]() {
-                        return std::make_pair(fi, GetFullHash(fi.path));
-                        }));
-                }
-
-                for (auto& fut : futures) {
-                    auto [fi, hash_opt] = fut.get();
-                    if (hash_opt) full_groups[HashToString(*hash_opt)].push_back(fi);
-                }
+            for (const auto& fi : q_group) {
+                pool.enqueue([fi, &full_groups, &full_mutex, &full_latch]() {
+                    try {
+                        auto hash = GetFullHash(fi.path);
+                        if (hash) {
+                            std::lock_guard lock(full_mutex);
+                            full_groups[HashToString(*hash)].push_back(fi);
+                        }
+                    }
+                    catch (...) { /* Игнорируем сбой */ }
+                    full_latch.count_down();
+                    });
             }
+            full_latch.wait();
 
-            // ЭТАП 3: Перемещение
             for (auto& [f_hash, f_group] : full_groups) {
                 if (f_group.size() < 2) continue;
                 const FileInfo& keeper = PickKeeper(f_group, downloads);

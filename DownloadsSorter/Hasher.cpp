@@ -7,7 +7,6 @@ export module Hasher;
 import std;
 import Console;
 
-// Вспомогательная функция для настройки BCrypt (чтобы не дублировать код)
 static BCRYPT_HASH_HANDLE CreateHasher(BCRYPT_ALG_HANDLE& hAlg, std::vector<unsigned char>& objBuf) {
     if (!BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, nullptr, 0)))
         return nullptr;
@@ -39,13 +38,33 @@ export std::optional<std::array<unsigned char, 32>> GetQuickHash(const std::file
         return std::nullopt;
     }
 
-    std::vector<unsigned char> buffer(4096); // Читаем только 4 КБ
+    std::vector<unsigned char> buffer(1024 * 1024);
     DWORD bytesRead = 0;
-    bool ok = ReadFile(hFile, buffer.data(), (DWORD)buffer.size(), &bytesRead, nullptr) && bytesRead > 0;
+    bool ok = true;
+
+    if (ReadFile(hFile, buffer.data(), (DWORD)buffer.size(), &bytesRead, nullptr) && bytesRead > 0) {
+        ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.data(), bytesRead, 0));
+    }
+    else { ok = false; }
+
+    if (ok) {
+        LARGE_INTEGER fileSize;
+        if (GetFileSizeEx(hFile, &fileSize) && fileSize.QuadPart > 2097152) {
+            LARGE_INTEGER li = {};
+            li.QuadPart = -1024LL * 1024LL;
+            if (SetFilePointerEx(hFile, li, nullptr, FILE_END)) {
+                if (ReadFile(hFile, buffer.data(), (DWORD)buffer.size(), &bytesRead, nullptr) && bytesRead > 0) {
+                    ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.data(), bytesRead, 0));
+                }
+                else { ok = false; }
+            }
+            else { ok = false; }
+        }
+    }
+
     CloseHandle(hFile);
 
     std::array<unsigned char, 32> outHash{};
-    if (ok) ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.data(), bytesRead, 0));
     if (ok) ok = BCRYPT_SUCCESS(BCryptFinishHash(hHash, outHash.data(), (ULONG)outHash.size(), 0));
 
     BCryptDestroyHash(hHash);
@@ -59,13 +78,13 @@ export std::optional<std::array<unsigned char, 32>> GetFullHash(const std::files
     BCRYPT_HASH_HANDLE hHash = CreateHasher(hAlg, objBuf);
     if (!hHash) return std::nullopt;
 
-    HANDLE hFile = CreateFileW(GetWinApiPath(file).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE hFile = CreateFileW(GetWinApiPath(file).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
         BCryptDestroyHash(hHash); BCryptCloseAlgorithmProvider(hAlg, 0);
         return std::nullopt;
     }
 
-    std::vector<unsigned char> buffer(1024 * 1024); // Буфер 1 МБ
+    std::vector<unsigned char> buffer(16 * 1024 * 1024);
     DWORD bytesRead = 0;
     bool ok = true;
     while (ok) {
