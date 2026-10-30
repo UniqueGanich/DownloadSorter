@@ -27,6 +27,7 @@ export ScanResult ScanDownloads(const std::filesystem::path& downloads)
             case FileStatus::Temporary: result.skipped_temp++; break;
             case FileStatus::TooFresh:  result.skipped_fresh++; break;
             case FileStatus::Locked:    result.skipped_locked++; break;
+            case FileStatus::Ignored:   break;
             default: break;
             }
         };

@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="DownloadsSorter/DownloadsSorter.vcxproj" />
+  <Project Path="DownloadsSorter/DownloadsSorter.vcxproj" Id="42cfd3c7-201f-4721-a868-d2bd043b0f8a" />
 </Solution>

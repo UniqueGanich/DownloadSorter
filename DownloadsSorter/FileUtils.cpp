@@ -11,6 +11,7 @@ export enum class FileStatus
     Temporary,  // Временный (.crdownload)
     TooFresh,   // Слишком новый (<24ч)
     Locked,     // Занят другой программой
+    Ignored,    // Игнорируется
     Error       // Ошибка доступа
 };
 
@@ -35,8 +36,20 @@ export bool IsFileLocked(const std::filesystem::path& p)
 export FileStatus CheckFileStatus(const std::filesystem::path& p)
 {
     std::wstring ext = p.extension().wstring();
+    std::wstring filename = p.filename().wstring();
+
+    if (_wcsicmp(filename.c_str(), L"desktop.ini") == 0 ||
+        _wcsicmp(filename.c_str(), L"thumbs.db") == 0)
+        return FileStatus::Ignored;
+
+    DWORD attrs = GetFileAttributesW(p.c_str());
+    if (attrs != INVALID_FILE_ATTRIBUTES)
+        if ((attrs & FILE_ATTRIBUTE_HIDDEN) || (attrs & FILE_ATTRIBUTE_SYSTEM))
+            return FileStatus::Ignored;
+
     if (IsTemporaryExtension(ext)) return FileStatus::Temporary;
     if (!IsOlderThan24Hours(p))    return FileStatus::TooFresh;
     if (IsFileLocked(p))           return FileStatus::Locked;
+
     return FileStatus::Eligible;
 }
