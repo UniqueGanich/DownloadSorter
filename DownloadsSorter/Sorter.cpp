@@ -1,17 +1,15 @@
 ﻿export module Sorter;
 import std;
 import CheckPath;
-import Data;
+import Scanner;
 
 export bool sorter()
 {
-    auto downloads = getDownloadsPath();
+    auto downloads_opt = getDownloadsPath();
+    if (!downloads_opt) return false;
 
-    if (!downloads)
-    {
-        std::println(std::cerr, "Не удалось получить путь к папке «Загрузки». Выход.");
-        return false;
-    }
+    const std::filesystem::path downloads = *downloads_opt;
+    std::println("Папка «Загрузки»: {}\n", downloads.string());
 
-    std::println("Папка «Загрузки»: {}\n", downloads->string());
+    auto files_to_process = ScanDownloads(downloads);
 }

@@ -1,0 +1,33 @@
+module;
+#include <windows.h>
+
+export module FileUtils;
+import std;
+import Data;
+
+export bool IsOlderThan24Hours(const std::filesystem::path& p)
+{
+    std::error_code ec;
+    auto ftime = std::filesystem::last_write_time(p, ec);
+    if (ec) return false;
+    auto now = std::filesystem::file_time_type::clock::now();
+    return (now - ftime) > std::chrono::hours(24);
+}
+
+export bool IsFileLocked(const std::filesystem::path& p)
+{
+    HANDLE hFile = CreateFileW(p.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (hFile == INVALID_HANDLE_VALUE)
+        return true;
+    CloseHandle(hFile);
+    return false;
+}
+
+export bool IsFileEligible(const std::filesystem::path& p)
+{
+    std::wstring ext = p.extension().wstring();
+    if (IsTemporaryExtension(ext)) return false;
+    if (!IsOlderThan24Hours(p)) return false;
+    if (IsFileLocked(p)) return false;
+    return true;
+}
