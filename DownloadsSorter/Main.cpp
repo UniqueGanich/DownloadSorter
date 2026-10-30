@@ -1,6 +1,12 @@
-﻿import Sorter;
+﻿#include <cstdlib>
+
+import Sorter;
 
 int main()
 {
-	return sorter() ? 0 : 1;
+    bool success = sorter();
+
+    system("pause");
+
+    return success ? 0 : 1;
 }

@@ -36,5 +36,8 @@
     <ClCompile Include="Scanner.cpp">
       <Filter>Исходные файлы\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Mover.cpp">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
