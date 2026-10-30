@@ -136,6 +136,7 @@
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <BuildStlModules>true</BuildStlModules>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

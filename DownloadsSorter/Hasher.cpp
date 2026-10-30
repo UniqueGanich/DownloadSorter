@@ -38,22 +38,23 @@ export std::optional<std::array<unsigned char, 32>> GetQuickHash(const std::file
         return std::nullopt;
     }
 
-    auto buffer = std::make_unique<unsigned char[]>(1024 * 1024);
+    constexpr DWORD QUICK_BUF_SIZE = 1024 * 1024;
+    auto buffer = std::make_unique<unsigned char[]>(QUICK_BUF_SIZE);
     DWORD bytesRead = 0;
     bool ok = true;
 
-    if (ReadFile(hFile, buffer.get(), 1024 * 1024, &bytesRead, nullptr) && bytesRead > 0) {
+    if (ReadFile(hFile, buffer.get(), QUICK_BUF_SIZE, &bytesRead, nullptr) && bytesRead > 0) {
         ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.get(), bytesRead, 0));
     }
     else { ok = false; }
 
     if (ok) {
         LARGE_INTEGER fileSize;
-        if (GetFileSizeEx(hFile, &fileSize) && fileSize.QuadPart > 2097152) {
+        if (GetFileSizeEx(hFile, &fileSize) && fileSize.QuadPart > (QUICK_BUF_SIZE * 2LL)) {
             LARGE_INTEGER li = {};
-            li.QuadPart = -1024LL * 1024LL;
+            li.QuadPart = -(LONGLONG)QUICK_BUF_SIZE;
             if (SetFilePointerEx(hFile, li, nullptr, FILE_END)) {
-                if (ReadFile(hFile, buffer.get(), 1024 * 1024, &bytesRead, nullptr) && bytesRead > 0) {
+                if (ReadFile(hFile, buffer.get(), QUICK_BUF_SIZE, &bytesRead, nullptr) && bytesRead > 0) {
                     ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.get(), bytesRead, 0));
                 }
                 else { ok = false; }
@@ -84,12 +85,13 @@ export std::optional<std::array<unsigned char, 32>> GetFullHash(const std::files
         return std::nullopt;
     }
 
-    auto buffer = std::make_unique<unsigned char[]>(16 * 1024 * 1024);
+    constexpr DWORD FULL_BUF_SIZE = 4 * 1024 * 1024;
+    auto buffer = std::make_unique<unsigned char[]>(FULL_BUF_SIZE);
     DWORD bytesRead = 0;
     bool ok = true;
 
     while (ok) {
-        if (!ReadFile(hFile, buffer.get(), 16 * 1024 * 1024, &bytesRead, nullptr)) { ok = false; break; }
+        if (!ReadFile(hFile, buffer.get(), FULL_BUF_SIZE, &bytesRead, nullptr)) { ok = false; break; }
         if (bytesRead == 0) break;
         if (!BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.get(), bytesRead, 0))) ok = false;
     }
