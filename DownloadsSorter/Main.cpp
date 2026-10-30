@@ -1,11 +1,9 @@
 ﻿#include <Windows.h>
-#include <cstdlib>
 
 import std;
 import Sorter;
 
-int main()
-{
+int main() {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD mode = 0;
     GetConsoleMode(hOut, &mode);
@@ -13,7 +11,7 @@ int main()
 
     bool success = sorter();
 
-    std::println("Нажмите любую кнопку чтобый выйти");
+    std::println("Нажмите любую кнопку чтобы выйти");
     std::cin.get();
 
     return success ? 0 : 1;

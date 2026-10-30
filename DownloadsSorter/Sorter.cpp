@@ -11,72 +11,63 @@ import Deduplicator;
 import Data;
 import Console;
 
-export bool sorter()
-{
-    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+static int RemoveEmptyFolders(const std::filesystem::path& downloads) {
+    int removed = 0;
+    std::error_code ec;
+
+    auto try_remove = [&](const std::filesystem::path& p, std::wstring_view name) {
+        ec.clear();
+        if (!std::filesystem::exists(p, ec) || !std::filesystem::is_empty(p, ec))
+            return;
+        std::filesystem::remove(p, ec);
+        if (!ec) {
+            std::println("{}  [Удалена пустая папка] {}{}", CYAN, ToUtf8(name), RESET);
+            ++removed;
+        }
+        else {
+            std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}",
+                RED, ToUtf8(name), ec.message(), RESET);
+        }
+        };
+
+    for (auto folder_name : kCategoryFolders)
+        try_remove(downloads / folder_name, folder_name);
+    try_remove(downloads / kDuplicateFolder, kDuplicateFolder);
+
+    return removed;
+}
+
+export bool sorter() {
+    auto start_time = std::chrono::steady_clock::now();
 
     auto downloads_opt = getDownloadsPath();
     if (!downloads_opt) return false;
-
     const std::filesystem::path downloads = *downloads_opt;
     std::println("{}Папка «Загрузки»:{} {}\n", BOLD, RESET, ToUtf8(downloads.wstring()));
 
-    std::error_code ec;
-
-    // ПРОХОД 1: Сортировка
+    // Проход 1: сортировка
     auto scan_res = ScanDownloads(downloads);
     int moved_count = 0;
-
-    if (!scan_res.files.empty())
-    {
+    if (!scan_res.files.empty()) {
         std::println("{}── Начинаем сортировку ({} файлов) ──{}", BOLD, scan_res.files.size(), RESET);
-        for (const std::filesystem::path& file : scan_res.files)
-            if (MoveFileToCategory(file, downloads)) moved_count++;
+        for (const auto& file : scan_res.files)
+            if (MoveFileToCategory(file, downloads)) ++moved_count;
     }
-    else std::println("Нет файлов для сортировки.");
+    else {
+        std::println("Нет файлов для сортировки.");
+    }
 
-    // ПРОХОД 2: Дедупликация
+    // Проход 2: дедупликация
     auto scan_res_dedupe = ScanDownloads(downloads);
     std::println("");
     int dedupe_count = Deduplicate(downloads, scan_res_dedupe.files);
 
-    // ПРОХОД 3: Уборка пустых папок
-    int removed_folders = 0;
-    std::filesystem::path dup_dir = downloads / kDuplicateFolder;
+    // Проход 3: уборка пустых папок
+    int removed_folders = RemoveEmptyFolders(downloads);
 
-    for (auto folder_name : kCategoryFolders)
-    {
-        std::filesystem::path p = downloads / folder_name;
-
-        if (std::filesystem::exists(p, ec) && std::filesystem::is_empty(p, ec))
-        {
-            std::filesystem::remove(p, ec);
-            if (!ec)
-            {
-                std::println("{}  [Удалена пустая папка] {}{}", CYAN, ToUtf8(std::wstring(folder_name)), RESET);
-                removed_folders++;
-            }
-            else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}", RED, ToUtf8(std::wstring(folder_name)), ec.message(), RESET);
-        }
-    }
-
-    if (std::filesystem::exists(dup_dir, ec) && std::filesystem::is_empty(dup_dir, ec))
-    {
-        std::filesystem::remove(dup_dir, ec);
-        if (!ec)
-        {
-            std::println("{}  [Удалена пустая папка] {}{}", CYAN, ToUtf8(std::wstring(kDuplicateFolder)), RESET);
-            removed_folders++;
-        }
-        else std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}", RED, ToUtf8(std::wstring(kDuplicateFolder)), ec.message(), RESET);
-    }
-
-    // ИТОГИ
-    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-
-    auto diff = end_time - start_time;
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
-    long long duration = ms.count();
+    // Итоги
+    auto diff = std::chrono::steady_clock::now() - start_time;
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
 
     std::println("\n{}{}============ СТАТИСТИКА ============{}", BOLD, CYAN, RESET);
     std::println("{}Время работы:{}      {} мс", BOLD, RESET, duration);
@@ -84,12 +75,11 @@ export bool sorter()
     std::println("{}Найдено дубликатов:{} {}", BOLD, RESET, dedupe_count);
     std::println("{}Удалено папок:{}     {}", BOLD, RESET, removed_folders);
 
-    if (scan_res.skipped_temp > 0 || scan_res.skipped_fresh > 0 || scan_res.skipped_locked > 0)
-    {
+    if (scan_res.skipped_temp || scan_res.skipped_fresh || scan_res.skipped_locked) {
         std::println("\n{}Пропущено (осталось в покое):{}", BOLD, RESET);
-        if (scan_res.skipped_temp > 0)   std::println("  {}• Незавершенные загрузки:{} {}", YELLOW, RESET, scan_res.skipped_temp);
-        if (scan_res.skipped_fresh > 0)  std::println("  {}• Скачаны менее 24ч назад:{} {}", YELLOW, RESET, scan_res.skipped_fresh);
-        if (scan_res.skipped_locked > 0) std::println("  {}• Заняты другой программой:{} {}", RED, RESET, scan_res.skipped_locked);
+        if (scan_res.skipped_temp)   std::println("  {}• Незавершенные загрузки:{} {}", YELLOW, RESET, scan_res.skipped_temp);
+        if (scan_res.skipped_fresh)  std::println("  {}• Скачаны менее 24ч назад:{} {}", YELLOW, RESET, scan_res.skipped_fresh);
+        if (scan_res.skipped_locked) std::println("  {}• Заняты другой программой:{} {}", RED, RESET, scan_res.skipped_locked);
     }
     std::println("{}{}====================================={}\n", BOLD, CYAN, RESET);
 

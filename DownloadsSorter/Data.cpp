@@ -2,24 +2,13 @@ export module Data;
 
 import std;
 
-// Склад для дубликатов
 export inline constexpr std::wstring_view kDuplicateFolder = L"+0_Duplicate";
 
-// Категории для обхода
 export inline constexpr std::array<std::wstring_view, 10> kCategoryFolders = {
-    L"+Archive",
-    L"+Audio",
-    L"+Book",
-    L"+Code",
-    L"+Document",
-    L"+Image",
-    L"+Installer",
-    L"+Torrent",
-    L"+Video",
-    L"+_Other",
+    L"+Archive", L"+Audio", L"+Book", L"+Code", L"+Document",
+    L"+Image",   L"+Installer", L"+Torrent", L"+Video", L"+_Other",
 };
 
-// расширение → папка
 export inline const std::unordered_map<std::wstring_view, std::wstring_view> kExtToFolder = {
     // +Archive
     { L".7z", L"+Archive" },{ L".bz2", L"+Archive" },{ L".cab", L"+Archive" },
@@ -85,15 +74,9 @@ export inline const std::unordered_map<std::wstring_view, std::wstring_view> kEx
     { L".webm", L"+Video" },{ L".wmv", L"+Video" },
 };
 
-// не трогаем
 export inline constexpr std::array<std::wstring_view, 5> kTemporaryExts = {
-L".crdownload",
-L".download",
-L".part",
-L".partial",
-L".tmp",
+    L".crdownload", L".download", L".part", L".partial", L".tmp",
 };
-
 
 inline std::wstring ToLower(std::wstring_view str) noexcept {
     std::wstring result;
@@ -104,14 +87,14 @@ inline std::wstring ToLower(std::wstring_view str) noexcept {
 }
 
 export inline std::wstring_view FindFolderForExtension(std::wstring_view ext) noexcept {
-    std::wstring lower_ext = ToLower(ext);
-    auto it = kExtToFolder.find(lower_ext);
-    if (it != kExtToFolder.end()) return it->second;
-    return {};
+    std::wstring lower = ToLower(ext);
+    auto it = kExtToFolder.find(lower);
+    return it != kExtToFolder.end() ? it->second : std::wstring_view{};
 }
 
 export inline bool IsTemporaryExtension(std::wstring_view ext) noexcept {
-    std::wstring lower_ext = ToLower(ext);
-    for (auto tmp : kTemporaryExts) if (tmp == lower_ext) return true;
+    std::wstring lower = ToLower(ext);
+    for (auto tmp : kTemporaryExts)
+        if (tmp == lower) return true;
     return false;
 }
