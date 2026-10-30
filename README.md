@@ -1,4 +1,4 @@
-# DownloadSorter
+# Download Sorter
 
 ## English
 ### 🚀 How to run?
