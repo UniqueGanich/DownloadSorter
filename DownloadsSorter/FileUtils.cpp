@@ -5,6 +5,15 @@ export module FileUtils;
 import std;
 import Data;
 
+export enum class FileStatus
+{
+    Eligible,   // Подходит
+    Temporary,  // Временный (.crdownload)
+    TooFresh,   // Слишком новый (<24ч)
+    Locked,     // Занят другой программой
+    Error       // Ошибка доступа
+};
+
 export bool IsOlderThan24Hours(const std::filesystem::path& p)
 {
     std::error_code ec;
@@ -23,11 +32,11 @@ export bool IsFileLocked(const std::filesystem::path& p)
     return false;
 }
 
-export bool IsFileEligible(const std::filesystem::path& p)
+export FileStatus CheckFileStatus(const std::filesystem::path& p)
 {
     std::wstring ext = p.extension().wstring();
-    if (IsTemporaryExtension(ext)) return false;
-    if (!IsOlderThan24Hours(p)) return false;
-    if (IsFileLocked(p)) return false;
-    return true;
+    if (IsTemporaryExtension(ext)) return FileStatus::Temporary;
+    if (!IsOlderThan24Hours(p))    return FileStatus::TooFresh;
+    if (IsFileLocked(p))           return FileStatus::Locked;
+    return FileStatus::Eligible;
 }
