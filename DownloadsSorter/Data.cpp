@@ -78,24 +78,31 @@ export inline constexpr std::array<std::wstring_view, 5> kTemporaryExts = {
     L".crdownload", L".download", L".part", L".partial", L".tmp",
 };
 
-inline std::wstring ToLower(std::wstring_view str) noexcept {
-    std::wstring result;
-    result.reserve(str.size());
-    for (wchar_t c : str) {
-        if (c >= L'A' && c <= L'Z') c = c + (L'a' - L'A');
-        result.push_back(c);
-    }
-    return result;
-}
-
 export inline std::wstring_view FindFolderForExtension(std::wstring_view ext) noexcept {
-    std::wstring lower = ToLower(ext);
-    auto it = kExtToFolder.find(lower);
+    if (ext.empty() || ext.size() > 15) return {};
+
+    wchar_t lower_buf[16] = {}; // <-- ИСПРАВЛЕНО: Добавлена инициализация нулями
+    for (size_t i = 0; i < ext.size(); ++i) {
+        wchar_t c = ext[i];
+        if (c >= L'A' && c <= L'Z') c = c + (L'a' - L'A');
+        lower_buf[i] = c;
+    }
+
+    auto it = kExtToFolder.find(std::wstring_view(lower_buf, ext.size()));
     return it != kExtToFolder.end() ? it->second : std::wstring_view{};
 }
 
 export inline bool IsTemporaryExtension(std::wstring_view ext) noexcept {
-    std::wstring lower = ToLower(ext);
+    if (ext.empty() || ext.size() > 15) return false;
+
+    wchar_t lower_buf[16] = {}; // <-- ИСПРАВЛЕНО: Добавлена инициализация нулями
+    for (size_t i = 0; i < ext.size(); ++i) {
+        wchar_t c = ext[i];
+        if (c >= L'A' && c <= L'Z') c = c + (L'a' - L'A');
+        lower_buf[i] = c;
+    }
+
+    std::wstring_view lower(lower_buf, ext.size());
     for (auto tmp : kTemporaryExts)
         if (tmp == lower) return true;
     return false;

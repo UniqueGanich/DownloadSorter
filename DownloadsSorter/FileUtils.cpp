@@ -9,7 +9,6 @@ export enum class FileStatus {
     Eligible,   // Подходит
     Temporary,  // Временный (.crdownload)
     TooFresh,   // Слишком новый (<24ч)
-    Locked,     // Занят другой программой
     Ignored,    // Игнорируется
     Error       // Ошибка доступа
 };
@@ -19,13 +18,6 @@ export bool IsOlderThan24Hours(const std::filesystem::path& p) {
     auto ftime = std::filesystem::last_write_time(p, ec);
     if (ec) return false;
     return (std::filesystem::file_time_type::clock::now() - ftime) > std::chrono::hours(24);
-}
-
-export bool IsFileLocked(const std::filesystem::path& p) {
-    HANDLE h = CreateFileW(p.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (h == INVALID_HANDLE_VALUE) return true;
-    CloseHandle(h);
-    return false;
 }
 
 export FileStatus CheckFileStatus(const std::filesystem::path& p) {
@@ -42,6 +34,5 @@ export FileStatus CheckFileStatus(const std::filesystem::path& p) {
 
     if (IsTemporaryExtension(ext)) return FileStatus::Temporary;
     if (!IsOlderThan24Hours(p))    return FileStatus::TooFresh;
-    if (IsFileLocked(p))           return FileStatus::Locked;
     return FileStatus::Eligible;
 }
