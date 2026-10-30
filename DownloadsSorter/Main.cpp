@@ -2,5 +2,5 @@
 
 int main()
 {
-	sorter();
+	return sorter() ? 0 : 1;
 }

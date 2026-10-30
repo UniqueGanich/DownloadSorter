@@ -1,16 +1,17 @@
 ﻿export module Sorter;
 import std;
 import CheckPath;
+import Data;
 
-export void sorter()
+export bool sorter()
 {
     auto downloads = getDownloadsPath();
 
     if (!downloads)
     {
         std::println(std::cerr, "Не удалось получить путь к папке «Загрузки». Выход.");
-        return;
+        return false;
     }
 
-    std::println("Папка «Загрузки»: {}", downloads->string());
+    std::println("Папка «Загрузки»: {}\n", downloads->string());
 }
