@@ -1,4 +1,5 @@
 ﻿#include <Windows.h>
+#include <conio.h>
 
 import std;
 import Sorter;
@@ -21,7 +22,8 @@ int main() {
     }
 
     std::println("Нажмите любую кнопку чтобы выйти");
-    std::cin.get();
+
+    _getch();
 
     return success ? 0 : 1;
 }
