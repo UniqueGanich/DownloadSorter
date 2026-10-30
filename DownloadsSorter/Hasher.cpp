@@ -38,12 +38,12 @@ export std::optional<std::array<unsigned char, 32>> GetQuickHash(const std::file
         return std::nullopt;
     }
 
-    std::vector<unsigned char> buffer(1024 * 1024);
+    auto buffer = std::make_unique<unsigned char[]>(1024 * 1024);
     DWORD bytesRead = 0;
     bool ok = true;
 
-    if (ReadFile(hFile, buffer.data(), (DWORD)buffer.size(), &bytesRead, nullptr) && bytesRead > 0) {
-        ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.data(), bytesRead, 0));
+    if (ReadFile(hFile, buffer.get(), 1024 * 1024, &bytesRead, nullptr) && bytesRead > 0) {
+        ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.get(), bytesRead, 0));
     }
     else { ok = false; }
 
@@ -53,8 +53,8 @@ export std::optional<std::array<unsigned char, 32>> GetQuickHash(const std::file
             LARGE_INTEGER li = {};
             li.QuadPart = -1024LL * 1024LL;
             if (SetFilePointerEx(hFile, li, nullptr, FILE_END)) {
-                if (ReadFile(hFile, buffer.data(), (DWORD)buffer.size(), &bytesRead, nullptr) && bytesRead > 0) {
-                    ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.data(), bytesRead, 0));
+                if (ReadFile(hFile, buffer.get(), 1024 * 1024, &bytesRead, nullptr) && bytesRead > 0) {
+                    ok = BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.get(), bytesRead, 0));
                 }
                 else { ok = false; }
             }
@@ -78,19 +78,20 @@ export std::optional<std::array<unsigned char, 32>> GetFullHash(const std::files
     BCRYPT_HASH_HANDLE hHash = CreateHasher(hAlg, objBuf);
     if (!hHash) return std::nullopt;
 
-    HANDLE hFile = CreateFileW(GetWinApiPath(file).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
+    HANDLE hFile = CreateFileW(GetWinApiPath(file).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
         BCryptDestroyHash(hHash); BCryptCloseAlgorithmProvider(hAlg, 0);
         return std::nullopt;
     }
 
-    std::vector<unsigned char> buffer(16 * 1024 * 1024);
+    auto buffer = std::make_unique<unsigned char[]>(16 * 1024 * 1024);
     DWORD bytesRead = 0;
     bool ok = true;
+
     while (ok) {
-        if (!ReadFile(hFile, buffer.data(), (DWORD)buffer.size(), &bytesRead, nullptr)) { ok = false; break; }
+        if (!ReadFile(hFile, buffer.get(), 16 * 1024 * 1024, &bytesRead, nullptr)) { ok = false; break; }
         if (bytesRead == 0) break;
-        if (!BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.data(), bytesRead, 0))) ok = false;
+        if (!BCRYPT_SUCCESS(BCryptHashData(hHash, buffer.get(), bytesRead, 0))) ok = false;
     }
     CloseHandle(hFile);
 
