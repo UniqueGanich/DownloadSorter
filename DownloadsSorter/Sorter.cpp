@@ -75,10 +75,10 @@ export bool sorter() {
     std::println("{}Найдено дубликатов:{} {}", BOLD, RESET, dedupe_count);
     std::println("{}Удалено папок:{}     {}", BOLD, RESET, removed_folders);
 
-    if (scan_res.skipped_temp || scan_res.skipped_fresh) {
+    if (scan_res.skipped_temp || scan_res.skipped_locked) {
         std::println("\n{}Пропущено (осталось в покое):{}", BOLD, RESET);
-        if (scan_res.skipped_temp)   std::println("  {}• Незавершенные загрузки:{} {}", YELLOW, RESET, scan_res.skipped_temp);
-        if (scan_res.skipped_fresh)  std::println("  {}• Скачаны менее 24ч назад:{} {}", YELLOW, RESET, scan_res.skipped_fresh);
+        if (scan_res.skipped_temp)   std::println("  {}• Временные файлы (идет загрузка):{} {}", YELLOW, RESET, scan_res.skipped_temp);
+        if (scan_res.skipped_locked) std::println("  {}• Заняты или только что изменены:{} {}", YELLOW, RESET, scan_res.skipped_locked);
     }
     std::println("{}{}====================================={}\n", BOLD, CYAN, RESET);
 

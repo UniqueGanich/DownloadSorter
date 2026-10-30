@@ -7,14 +7,12 @@ import Console;
 export struct ScanResult {
     std::vector<std::filesystem::path> files;
     int skipped_temp = 0;
-    int skipped_fresh = 0;
+    int skipped_locked = 0; // <-- Заменили skipped_fresh на skipped_locked
 };
 
 template<typename Iterator>
 static void ProcessEntries(Iterator it, Iterator end, ScanResult& result, std::wstring_view context) {
     auto handle = [&](const std::filesystem::directory_entry& entry) {
-        // ИСПРАВЛЕНО: Используем error_code, чтобы избежать исключений,
-        // если файл будет удален прямо во время сканирования.
         std::error_code check_ec;
         if (!entry.is_regular_file(check_ec) || check_ec) return;
         if (entry.is_symlink(check_ec) || check_ec) return;
@@ -22,7 +20,7 @@ static void ProcessEntries(Iterator it, Iterator end, ScanResult& result, std::w
         switch (CheckFileStatus(entry.path())) {
         case FileStatus::Eligible:  result.files.push_back(entry.path()); break;
         case FileStatus::Temporary: result.skipped_temp++; break;
-        case FileStatus::TooFresh:  result.skipped_fresh++; break;
+        case FileStatus::Locked:    result.skipped_locked++; break;
         default: break;
         }
         };
