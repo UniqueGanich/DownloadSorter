@@ -17,10 +17,12 @@ export std::string ToUtf8(std::wstring_view wstr) {
 
 export inline std::wstring GetWinApiPath(const std::filesystem::path& p) {
     std::wstring s = p.wstring();
+    for (auto& c : s) if (c == L'/') c = L'\\';
+
     if (s.length() > 240 && s.rfind(L"\\\\?\\", 0) != 0) {
-    return L"\\\\?\\" + s;
+        return L"\\\\?\\" + s;
     }
-return s;
+    return s;
 }
 
 export inline constexpr std::string_view RESET = "\033[0m";

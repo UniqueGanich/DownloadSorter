@@ -40,10 +40,13 @@ export int Deduplicate(const std::filesystem::path& downloads, const std::vector
 
     std::vector<FileInfo> file_infos;
     std::error_code ec;
+
     for (const auto& p : files) {
         auto size = std::filesystem::file_size(p, ec);
         if (ec) continue;
-        file_infos.push_back({ p, size, std::filesystem::last_write_time(p, ec) });
+        auto mtime = std::filesystem::last_write_time(p, ec);
+        if (ec) continue;
+        file_infos.push_back({ p, size, mtime });
     }
 
     int duplicates_moved = 0;
