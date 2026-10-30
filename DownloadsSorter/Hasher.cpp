@@ -5,6 +5,7 @@ module;
 
 export module Hasher;
 import std;
+import Console;
 
 static bool ComputeHash(const std::filesystem::path& file, std::array<unsigned char, 32>& outHash) {
     BCRYPT_ALG_HANDLE hAlg = nullptr;
@@ -24,9 +25,7 @@ static bool ComputeHash(const std::filesystem::path& file, std::array<unsigned c
         return false;
     }
 
-    // WinAPI вместо std::ifstream — поддержка кириллических путей
-    HANDLE hFile = CreateFileW(file.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE hFile = CreateFileW(GetWinApiPath(file).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
         BCryptDestroyHash(hHash);
         BCryptCloseAlgorithmProvider(hAlg, 0);

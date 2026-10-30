@@ -81,8 +81,10 @@ export inline constexpr std::array<std::wstring_view, 5> kTemporaryExts = {
 inline std::wstring ToLower(std::wstring_view str) noexcept {
     std::wstring result;
     result.reserve(str.size());
-    for (wchar_t c : str)
-        result.push_back(static_cast<wchar_t>(std::towlower(c)));
+    for (wchar_t c : str) {
+        if (c >= L'A' && c <= L'Z') c = c + (L'a' - L'A');
+        result.push_back(c);
+    }
     return result;
 }
 

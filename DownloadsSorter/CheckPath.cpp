@@ -14,8 +14,16 @@ export std::optional<std::filesystem::path> getDownloadsPath() {
     hr = SHGetKnownFolderPath(FOLDERID_Downloads, KF_FLAG_DEFAULT_PATH, nullptr, &raw_path);
 
     std::optional<std::filesystem::path> result;
-    if (SUCCEEDED(hr) && raw_path != nullptr)
-        result = std::filesystem::path(raw_path);
+    if (SUCCEEDED(hr) && raw_path != nullptr) {
+        std::error_code ec;
+        auto canonical = std::filesystem::weakly_canonical(std::filesystem::path(raw_path), ec);
+        if (!ec) {
+            result = canonical;
+        }
+        else {
+            result = std::filesystem::path(raw_path);
+        }
+    }
 
     if (raw_path != nullptr) CoTaskMemFree(raw_path);
     if (need_uninit) CoUninitialize();

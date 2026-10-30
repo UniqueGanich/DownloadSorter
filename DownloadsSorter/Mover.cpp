@@ -49,7 +49,7 @@ export bool MoveFileToCategory(const std::filesystem::path& file,
         return false;
 
     const std::filesystem::path dest_path = GetUniquePath(dest_dir, file);
-    if (MoveFileExW(file.c_str(), dest_path.c_str(), MOVEFILE_COPY_ALLOWED)) {
+    if (MoveFileExW(GetWinApiPath(file).c_str(), GetWinApiPath(dest_path).c_str(), MOVEFILE_COPY_ALLOWED)) {
         std::println("{}  [Перемещен]{} {} -> {}", GREEN, RESET,
             ToUtf8(file.filename().wstring()), ToUtf8(folder_name));
         return true;
@@ -70,7 +70,7 @@ export bool MoveFileToDuplicate(const std::filesystem::path& file,
         return false;
 
     const std::filesystem::path dest_path = GetUniquePath(dest_dir, file);
-    if (MoveFileExW(file.c_str(), dest_path.c_str(), MOVEFILE_COPY_ALLOWED)) {
+    if (MoveFileExW(GetWinApiPath(file).c_str(), GetWinApiPath(dest_path).c_str(), MOVEFILE_COPY_ALLOWED)) {
         std::println("{}  [Дубликат]{} {} -> {}", YELLOW, RESET,
             ToUtf8(file.filename().wstring()), ToUtf8(kDuplicateFolder));
         return true;
