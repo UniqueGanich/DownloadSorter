@@ -10,17 +10,10 @@ import Console;
 export enum class FileStatus {
     Eligible,   // Подходит
     Temporary,  // Временный (.crdownload, .part)
-    Locked,     // Занят другой программой или качается прямо сейчас
+    Locked,     // Качается прямо сейчас (изменен менее 5 сек назад)
     Ignored,    // Игнорируется (системный мусор)
     Error       // Ошибка доступа
 };
-
-export bool IsFileLockedByOS(const std::filesystem::path& p) {
-    HANDLE h = CreateFileW(GetWinApiPath(p).c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (h == INVALID_HANDLE_VALUE) return true;
-    CloseHandle(h);
-    return false;
-}
 
 export FileStatus CheckFileStatus(const std::filesystem::path& p) {
     const std::wstring ext = p.extension().wstring();
@@ -38,15 +31,13 @@ export FileStatus CheckFileStatus(const std::filesystem::path& p) {
 
     std::error_code ec;
     auto ftime = std::filesystem::last_write_time(p, ec);
-    if (ec) return FileStatus::Locked;
+    if (ec) return FileStatus::Error;
 
     auto age = std::filesystem::file_time_type::clock::now() - ftime;
 
-    if (age > std::chrono::seconds(5)) {
-        return FileStatus::Eligible;
+    if (age <= std::chrono::seconds(5)) {
+        return FileStatus::Locked;
     }
 
-    if (IsFileLockedByOS(p))  return FileStatus::Locked;
-
-    return FileStatus::Locked;
+    return FileStatus::Eligible;
 }

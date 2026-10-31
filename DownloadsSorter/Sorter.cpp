@@ -4,7 +4,6 @@
 export module Sorter;
 
 import std;
-import CheckPath;
 import Scanner;
 import Mover;
 import Deduplicator;
@@ -37,13 +36,10 @@ static int RemoveEmptyFolders(const std::filesystem::path& downloads) {
     return removed;
 }
 
-export bool sorter() {
+export bool sorter(const std::filesystem::path& downloads) {
     auto start_time = std::chrono::steady_clock::now();
 
-    auto downloads_opt = getDownloadsPath();
-    if (!downloads_opt) return false;
-    const std::filesystem::path downloads = *downloads_opt;
-    std::println("{}Папка «Загрузки»:{} {}\n", BOLD, RESET, ToUtf8(downloads.wstring()));
+    std::println("{}Папка сортировки:{} {}\n", BOLD, RESET, ToUtf8(downloads.wstring()));
 
     // Проход 1: сортировка
     auto scan_res = ScanDownloads(downloads);

@@ -3,27 +3,71 @@
 
 import std;
 import Sorter;
+import Menu;
+import Config;
+import CheckPath;
+import Console;
 
-int main() {
+int main(int argc, char* argv[]) {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD mode = 0;
     GetConsoleMode(hOut, &mode);
     SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT);
 
-    bool success = false;
-    try {
-        success = sorter();
-    }
-    catch (const std::exception& e) {
-        std::println(std::cerr, "\033[31m[Критическая ошибка] {}\033[0m", e.what());
-    }
-    catch (...) {
-        std::println(std::cerr, "\033[31m[Критическая ошибка] Неизвестное исключение.\033[0m");
+    bool isSilent = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string_view(argv[i]) == "--silent") {
+            isSilent = true;
+        }
     }
 
-    std::println("Нажмите любую кнопку чтобы выйти");
+    AppConfig cfg = LoadConfig();
+    std::filesystem::path target;
 
-    _getch();
+    if (cfg.targetFolder.empty()) {
+        auto opt = getDownloadsPath();
+        if (opt) target = *opt;
+        else { if (!isSilent) std::println("Ошибка получения пути к Загрузкам!"); return 1; }
+    }
+    else {
+        target = cfg.targetFolder;
+    }
 
-    return success ? 0 : 1;
+    if (isSilent) {
+        sorter(target);
+        return 0;
+    }
+
+    bool exitApp = false;
+    while (!exitApp) {
+        ShowMainMenu(cfg);
+        char choice = _getch();
+
+        switch (choice) {
+        case '1': {
+            sorter(target);
+            std::println("\nНажмите любую клавишу для возврата в меню...");
+            _getch();
+            break;
+        }
+        case '2':
+            ShowAutoRunMenu(cfg);
+            break;
+        case '3':
+            ShowFolderMenu(cfg);
+            if (cfg.targetFolder.empty()) {
+                auto opt = getDownloadsPath();
+                if (opt) target = *opt;
+            }
+            else {
+                target = cfg.targetFolder;
+            }
+            break;
+        case '0':
+            exitApp = true;
+            break;
+        }
+    }
+
+    return 0;
 }
