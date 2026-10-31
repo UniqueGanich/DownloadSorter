@@ -1,0 +1,29 @@
+name: Build Linux Static
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build inside Alpine
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/app -w /app/CrossPlatform alpine:latest sh -c '
+            apk add cmake g++ make openssl-dev openssl-libs-static &&
+            mkdir -p build &&
+            cd build &&
+            cmake -DCMAKE_BUILD_TYPE=Release .. &&
+            make -j4
+          '
+
+      - name: Upload Linux Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: DownloadsSorter-Linux-Static
+          path: CrossPlatform/build/DownloadsSorter
