@@ -4,9 +4,10 @@
 ### 🚀 How to run?
 1. Extract the archive to any location on your PC.
 2. Run the .exe file.
-3. As a bonus, you will get detailed statistics in the console after the process finishes.
-4. DO NOT rename the folders created by the program! They will no longer be recognized as "internal" folders.
-5. Deleting folders is ALLOWED. If you don't need a folder and its contents, you can delete them; it won't affect the program's operation.
+3. Select the “Run sorter” option.
+4. As a bonus, you will get detailed statistics in the console after the process finishes.
+5. DO NOT rename the folders created by the program! They will no longer be recognized as "internal" folders.
+6. Deleting folders is ALLOWED. If you don't need a folder and its contents, you can delete them; it won't affect the program's operation.
 
 ### ⚙️ How does it work?
 Before moving any file, the program verifies that it is not currently locked/running, is older than 24 hours, and is not a temporary file.
@@ -31,9 +32,10 @@ It then moves the file into one of the following folders:
 ### 🚀 Как запустить?
 1. Разархивируйте архив в любое место на вашем ПК
 2. Запустите .exe файл
-3. Бонусом получите подробную статистику в консоли, после завершения работы
-4. Папки созданные программой переименовывать НЕЛЬЗЯ! Они перестанут считаться "своими"
-5. Удалять папки - МОЖНО. Если вам не нужна папка и её содержимое - удаляйте, на работу программы это не повлияет
+3. Выберите пункт "Запустить сортировщик"
+4. Бонусом получите подробную статистику в консоли, после завершения работы
+5. Папки созданные программой переименовывать НЕЛЬЗЯ! Они перестанут считаться "своими"
+6. Удалять папки - МОЖНО. Если вам не нужна папка и её содержимое - удаляйте, на работу программы это не повлияет
 
 ### ⚙️ А как оно работает?
 1. Перед перемещением файла проверяет чтобы он не был запущен, был старше 24 часов и не был временным файлом
