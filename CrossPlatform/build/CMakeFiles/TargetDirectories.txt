@@ -1,3 +1,0 @@
-D:/Project_VS/CPPProject/DownloadSorter/CrossPlatform/build/CMakeFiles/DownloadsSorter.dir
-D:/Project_VS/CPPProject/DownloadSorter/CrossPlatform/build/CMakeFiles/ALL_BUILD.dir
-D:/Project_VS/CPPProject/DownloadSorter/CrossPlatform/build/CMakeFiles/ZERO_CHECK.dir
