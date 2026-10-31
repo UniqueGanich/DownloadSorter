@@ -9,6 +9,7 @@ import Mover;
 import Deduplicator;
 import Data;
 import Console;
+import Localization;
 
 static int RemoveEmptyFolders(const std::filesystem::path& downloads) {
     int removed = 0;
@@ -20,12 +21,12 @@ static int RemoveEmptyFolders(const std::filesystem::path& downloads) {
             return;
         std::filesystem::remove(p, ec);
         if (!ec) {
-            std::println("{}  [Удалена пустая папка] {}{}", CYAN, ToUtf8(name), RESET);
+            std::println("{}  [{}] {}{}", CYAN, Loc("Удалена пустая папка", "Deleted empty folder"), ToUtf8(name), RESET);
             ++removed;
         }
         else {
-            std::println(std::cerr, "{}  [Ошибка] Не удалось удалить {}: {}{}",
-                RED, ToUtf8(name), ec.message(), RESET);
+            std::println(std::cerr, "{}  [{}] {} {}: {}{}",
+                RED, Loc("Ошибка", "Error"), Loc("Не удалось удалить", "Failed to delete"), ToUtf8(name), ec.message(), RESET);
         }
         };
 
@@ -39,18 +40,18 @@ static int RemoveEmptyFolders(const std::filesystem::path& downloads) {
 export bool sorter(const std::filesystem::path& downloads) {
     auto start_time = std::chrono::steady_clock::now();
 
-    std::println("{}Папка сортировки:{} {}\n", BOLD, RESET, ToUtf8(downloads.wstring()));
+    std::println("{} {}:{} {}\n", BOLD, Loc("Папка сортировки:", "Sorting folder:"), RESET, ToUtf8(downloads.wstring()));
 
     // Проход 1: сортировка
     auto scan_res = ScanDownloads(downloads);
     int moved_count = 0;
     if (!scan_res.files.empty()) {
-        std::println("{}── Начинаем сортировку ({} файлов) ──{}", BOLD, scan_res.files.size(), RESET);
+        std::println("{}── {} ({} {}) ──{}", BOLD, Loc("Начинаем сортировку", "Starting sorting"), scan_res.files.size(), Loc("файлов", "files"), RESET);
         for (const auto& file : scan_res.files)
             if (MoveFileToCategory(file, downloads)) ++moved_count;
     }
     else {
-        std::println("Нет файлов для сортировки.");
+        std::println("{}", Loc("Нет файлов для сортировки.", "No files to sort."));
     }
 
     // Проход 2: дедупликация
@@ -65,16 +66,16 @@ export bool sorter(const std::filesystem::path& downloads) {
     auto diff = std::chrono::steady_clock::now() - start_time;
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
 
-    std::println("\n{}{}============ СТАТИСТИКА ============{}", BOLD, CYAN, RESET);
-    std::println("{}Время работы:{}      {} мс", BOLD, RESET, duration);
-    std::println("{}Перемещено файлов:{} {}", BOLD, RESET, moved_count);
-    std::println("{}Найдено дубликатов:{} {}", BOLD, RESET, dedupe_count);
-    std::println("{}Удалено папок:{}     {}", BOLD, RESET, removed_folders);
+    std::println("\n{}{}============ {} ============{}", BOLD, CYAN, Loc("СТАТИСТИКА", "STATISTICS"), RESET);
+    std::println("{} {}:{}      {} {}", BOLD, Loc("Время работы", "Execution time"), RESET, duration, Loc("мс", "ms"));
+    std::println("{} {}:{} {}", BOLD, Loc("Перемещено файлов", "Files moved"), RESET, moved_count);
+    std::println("{} {}:{} {}", BOLD, Loc("Найдено дубликатов", "Duplicates found"), RESET, dedupe_count);
+    std::println("{} {}:{}     {}", BOLD, Loc("Удалено папок", "Folders deleted"), RESET, removed_folders);
 
     if (scan_res.skipped_temp || scan_res.skipped_locked) {
-        std::println("\n{}Пропущено (осталось в покое):{}", BOLD, RESET);
-        if (scan_res.skipped_temp)   std::println("  {}• Временные файлы (идет загрузка):{} {}", YELLOW, RESET, scan_res.skipped_temp);
-        if (scan_res.skipped_locked) std::println("  {}• Заняты или только что изменены:{} {}", YELLOW, RESET, scan_res.skipped_locked);
+        std::println("\n{}{}:{}", BOLD, Loc("Пропущено (осталось в покое)", "Skipped (left untouched)"), RESET);
+        if (scan_res.skipped_temp)   std::println("  {}• {}:{} {}", YELLOW, Loc("Временные файлы (идет загрузка)", "Temporary files (downloading)"), RESET, scan_res.skipped_temp);
+        if (scan_res.skipped_locked) std::println("  {}• {}:{} {}", YELLOW, Loc("Заняты или только что изменены", "Locked or recently modified"), RESET, scan_res.skipped_locked);
     }
     std::println("{}{}====================================={}\n", BOLD, CYAN, RESET);
 

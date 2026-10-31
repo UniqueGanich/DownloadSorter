@@ -5,6 +5,7 @@ export module Mover;
 import std;
 import Data;
 import Console;
+import Localization;
 
 static std::filesystem::path GetUniquePath(const std::filesystem::path& dest_dir,
     const std::filesystem::path& original) {
@@ -27,11 +28,11 @@ static bool EnsureDirectory(const std::filesystem::path& dir, std::wstring_view 
     std::filesystem::create_directories(dir, ec);
     const std::wstring name(display_name);
     if (ec) {
-        std::println(std::cerr, "{}  [Ошибка] Создание папки {}: {}{}",
-            RED, ToUtf8(name), ec.message(), RESET);
+        std::println(std::cerr, "{}  [{}] {} {}: {}{}",
+            RED, Loc("Ошибка", "Error"), Loc("Создание папки", "Creating folder"), ToUtf8(name), ec.message(), RESET);
         return false;
     }
-    std::println("{}  [Создана папка] {}{}", CYAN, ToUtf8(name), RESET);
+    std::println("{}  [{}] {}{}", CYAN, Loc("Создана папка", "Folder created"), ToUtf8(name), RESET);
     return true;
 }
 
@@ -50,12 +51,12 @@ export bool MoveFileToCategory(const std::filesystem::path& file,
 
     const std::filesystem::path dest_path = GetUniquePath(dest_dir, file);
     if (MoveFileExW(GetWinApiPath(file).c_str(), GetWinApiPath(dest_path).c_str(), MOVEFILE_COPY_ALLOWED)) {
-        std::println("{}  [Перемещен]{} {} -> {}", GREEN, RESET,
+        std::println("{}  [{}]{} {} -> {}", GREEN, Loc("Перемещен", "Moved"), RESET,
             ToUtf8(file.filename().wstring()), ToUtf8(folder_name));
         return true;
     }
-    std::println(std::cerr, "{}  [Ошибка] Не удалось переместить {}{}",
-        RED, ToUtf8(file.filename().wstring()), RESET);
+    std::println(std::cerr, "{}  [{}] {} {}{}",
+        RED, Loc("Ошибка", "Error"), Loc("Не удалось переместить", "Failed to move"), ToUtf8(file.filename().wstring()), RESET);
     return false;
 }
 
@@ -71,11 +72,11 @@ export bool MoveFileToDuplicate(const std::filesystem::path& file,
 
     const std::filesystem::path dest_path = GetUniquePath(dest_dir, file);
     if (MoveFileExW(GetWinApiPath(file).c_str(), GetWinApiPath(dest_path).c_str(), MOVEFILE_COPY_ALLOWED)) {
-        std::println("{}  [Дубликат]{} {} -> {}", YELLOW, RESET,
+        std::println("{}  [{}]{} {} -> {}", YELLOW, Loc("Дубликат", "Duplicate"), RESET,
             ToUtf8(file.filename().wstring()), ToUtf8(kDuplicateFolder));
         return true;
     }
-    std::println(std::cerr, "{}  [Ошибка] Не удалось переместить дубликат {}{}",
-        RED, ToUtf8(file.filename().wstring()), RESET);
+    std::println(std::cerr, "{}  [{}] {} {}{}",
+        RED, Loc("Ошибка", "Error"), Loc("Не удалось переместить дубликат", "Failed to move duplicate"), ToUtf8(file.filename().wstring()), RESET);
     return false;
 }

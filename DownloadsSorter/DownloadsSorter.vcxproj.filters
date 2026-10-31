@@ -54,5 +54,8 @@
     <ClCompile Include="Config.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Localization.cpp">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

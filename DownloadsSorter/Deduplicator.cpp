@@ -3,6 +3,8 @@ import std;
 import Data;
 import Hasher;
 import Mover;
+import Console;
+import Localization;
 
 struct FileInfo {
     std::filesystem::path path;
@@ -89,7 +91,7 @@ export int Deduplicate(const std::filesystem::path& downloads, const std::vector
     }
 
     int duplicates_moved = 0;
-    std::println("── Начинаем поиск дубликатов ({} файлов) ──", file_infos.size());
+    std::println("── {} ({} {}) ──", Loc("Начинаем поиск дубликатов", "Starting duplicate search"), file_infos.size(), Loc("файлов", "files"));
 
     std::unordered_map<std::uintmax_t, std::vector<FileInfo>> size_groups;
     for (const auto& fi : file_infos) size_groups[fi.size].push_back(fi);
@@ -98,62 +100,68 @@ export int Deduplicate(const std::filesystem::path& downloads, const std::vector
     if (num_threads == 0) num_threads = 4;
     ThreadPool pool(num_threads);
 
-    for (auto& [_, group] : size_groups) {
-        if (group.size() < 2) continue;
+    try {
+        for (auto& [_, group] : size_groups) {
+            if (group.size() < 2) continue;
 
-        // ЭТАП 1: Быстрый хэш
-        std::unordered_map<std::string, std::vector<FileInfo>> quick_groups;
-        std::mutex quick_mutex;
-        std::latch quick_latch(group.size());
+            // ЭТАП 1: Быстрый хэш
+            std::unordered_map<std::string, std::vector<FileInfo>> quick_groups;
+            std::mutex quick_mutex;
+            std::latch quick_latch(static_cast<std::ptrdiff_t>(group.size()));
 
-        for (const auto& fi : group) {
-            pool.enqueue([fi, &quick_groups, &quick_mutex, &quick_latch]() {
-                try {
-                    auto hash = GetQuickHash(fi.path);
-                    if (hash) {
-                        std::lock_guard lock(quick_mutex);
-                        quick_groups[HashToString(*hash)].push_back(fi);
-                    }
-                }
-                catch (...) { /* Игнорируем сбой, чтобы не зависнуть */ }
-                quick_latch.count_down();
-                });
-        }
-        quick_latch.wait();
-
-        for (auto& [q_hash, q_group] : quick_groups) {
-            if (q_group.size() < 2) continue;
-
-            std::unordered_map<std::string, std::vector<FileInfo>> full_groups;
-            std::mutex full_mutex;
-            std::latch full_latch(q_group.size());
-
-            for (const auto& fi : q_group) {
-                pool.enqueue([fi, &full_groups, &full_mutex, &full_latch]() {
+            for (const auto& fi : group) {
+                pool.enqueue([fi, &quick_groups, &quick_mutex, &quick_latch]() {
                     try {
-                        auto hash = GetFullHash(fi.path);
+                        auto hash = GetQuickHash(fi.path);
                         if (hash) {
-                            std::lock_guard lock(full_mutex);
-                            full_groups[HashToString(*hash)].push_back(fi);
+                            std::lock_guard lock(quick_mutex);
+                            quick_groups[HashToString(*hash)].push_back(fi);
                         }
                     }
-                    catch (...) { /* Игнорируем сбой */ }
-                    full_latch.count_down();
+                    catch (...) { /* Игнорируем */ }
+                    quick_latch.count_down();
                     });
             }
-            full_latch.wait();
+            quick_latch.wait();
 
-            for (auto& [f_hash, f_group] : full_groups) {
-                if (f_group.size() < 2) continue;
-                const FileInfo& keeper = PickKeeper(f_group, downloads);
-                for (const auto& fi : f_group) {
-                    if (fi.path != keeper.path && MoveFileToDuplicate(fi.path, downloads))
-                        duplicates_moved++;
+            for (auto& [q_hash, q_group] : quick_groups) {
+                if (q_group.size() < 2) continue;
+
+                std::unordered_map<std::string, std::vector<FileInfo>> full_groups;
+                std::mutex full_mutex;
+                std::latch full_latch(static_cast<std::ptrdiff_t>(q_group.size()));
+
+                for (const auto& fi : q_group) {
+                    pool.enqueue([fi, &full_groups, &full_mutex, &full_latch]() {
+                        try {
+                            auto hash = GetFullHash(fi.path);
+                            if (hash) {
+                                std::lock_guard lock(full_mutex);
+                                full_groups[HashToString(*hash)].push_back(fi);
+                            }
+                        }
+                        catch (...) { /* Игнорируем */ }
+                        full_latch.count_down();
+                        });
+                }
+                full_latch.wait();
+
+                for (auto& [f_hash, f_group] : full_groups) {
+                    if (f_group.size() < 2) continue;
+                    const FileInfo& keeper = PickKeeper(f_group, downloads);
+                    for (const auto& fi : f_group) {
+                        if (fi.path != keeper.path && MoveFileToDuplicate(fi.path, downloads))
+                            duplicates_moved++;
+                    }
                 }
             }
         }
     }
+    catch (const std::exception& e) {
+        std::println(std::cerr, "{}[{}] {}: {}{}", RED, Loc("Ошибка", "Error"), Loc("Сбой при поиске дубликатов", "Duplicate search failed"), e.what(), RESET);
+    }
+    catch (...) {}
 
-    std::println("── Поиск дубликатов завершен. Перемещено копий: {} ──", duplicates_moved);
+    std::println("── {} {}: {} ──", Loc("Поиск дубликатов завершен.", "Duplicate search completed."), Loc("Перемещено копий", "Copies moved"), duplicates_moved);
     return duplicates_moved;
 }

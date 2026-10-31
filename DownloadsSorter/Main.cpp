@@ -7,6 +7,7 @@ import Menu;
 import Config;
 import CheckPath;
 import Console;
+import Localization;
 
 int main(int argc, char* argv[]) {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -27,7 +28,11 @@ int main(int argc, char* argv[]) {
     if (cfg.targetFolder.empty()) {
         auto opt = getDownloadsPath();
         if (opt) target = *opt;
-        else { if (!isSilent) std::println("Ошибка получения пути к Загрузкам!"); return 1; }
+        else {
+            if (!isSilent)
+                std::println("{}", Loc("Ошибка получения пути к Загрузкам!", "Error getting Downloads path!"));
+            return 1;
+        }
     }
     else {
         target = cfg.targetFolder;
@@ -46,7 +51,7 @@ int main(int argc, char* argv[]) {
         switch (choice) {
         case '1': {
             sorter(target);
-            std::println("\nНажмите любую клавишу для возврата в меню...");
+            std::println("\n{}", Loc("Нажмите любую клавишу для возврата в меню...", "Press any key to return to menu..."));
             _getch();
             break;
         }

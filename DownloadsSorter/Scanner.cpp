@@ -3,11 +3,12 @@ import std;
 import Data;
 import FileUtils;
 import Console;
+import Localization;
 
 export struct ScanResult {
     std::vector<std::filesystem::path> files;
     int skipped_temp = 0;
-    int skipped_locked = 0; // <-- Заменили skipped_fresh на skipped_locked
+    int skipped_locked = 0;
 };
 
 template<typename Iterator>
@@ -30,8 +31,8 @@ static void ProcessEntries(Iterator it, Iterator end, ScanResult& result, std::w
         handle(*it);
         it.increment(ec);
         if (ec) {
-            std::println(std::cerr, "{}  [Ошибка] Обход {}: {}{}",
-                RED, ToUtf8(context), ec.message(), RESET);
+            std::println(std::cerr, "{}  [{}] {} {}: {}{}",
+                RED, Loc("Ошибка", "Error"), Loc("Обход", "Scanning"), ToUtf8(context), ec.message(), RESET);
             break;
         }
     }
