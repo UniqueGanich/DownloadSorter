@@ -94,18 +94,20 @@ std::optional<std::array<unsigned char, 32>> GetFullHash(const std::filesystem::
 
 #else
 
+#include <openssl/evp.h>
+
 std::optional<std::array<unsigned char, 32>> GetQuickHash(const std::filesystem::path& file) {
     std::ifstream in(file, std::ios::binary);
     if (!in) return std::nullopt;
 
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
 
     std::vector<unsigned char> buffer(QUICK_BUF_SIZE);
 
     in.read(reinterpret_cast<char*>(buffer.data()), QUICK_BUF_SIZE);
     std::streamsize bytesRead = in.gcount();
-    if (bytesRead > 0) SHA256_Update(&ctx, buffer.data(), bytesRead);
+    if (bytesRead > 0) EVP_DigestUpdate(ctx, buffer.data(), bytesRead);
 
     in.seekg(0, std::ios::end);
     std::streamsize fileSize = in.tellg();
@@ -113,11 +115,14 @@ std::optional<std::array<unsigned char, 32>> GetQuickHash(const std::filesystem:
         in.seekg(-static_cast<std::streamoff>(QUICK_BUF_SIZE), std::ios::end);
         in.read(reinterpret_cast<char*>(buffer.data()), QUICK_BUF_SIZE);
         bytesRead = in.gcount();
-        if (bytesRead > 0) SHA256_Update(&ctx, buffer.data(), bytesRead);
+        if (bytesRead > 0) EVP_DigestUpdate(ctx, buffer.data(), bytesRead);
     }
 
     std::array<unsigned char, 32> outHash{};
-    SHA256_Final(outHash.data(), &ctx);
+    unsigned int len = 0;
+    EVP_DigestFinal_ex(ctx, outHash.data(), &len);
+    EVP_MD_CTX_free(ctx);
+
     return outHash;
 }
 
@@ -125,16 +130,19 @@ std::optional<std::array<unsigned char, 32>> GetFullHash(const std::filesystem::
     std::ifstream in(file, std::ios::binary);
     if (!in) return std::nullopt;
 
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
 
     std::vector<unsigned char> buffer(FULL_BUF_SIZE);
     while (in.read(reinterpret_cast<char*>(buffer.data()), FULL_BUF_SIZE) || in.gcount() > 0) {
-        SHA256_Update(&ctx, buffer.data(), in.gcount());
+        EVP_DigestUpdate(ctx, buffer.data(), in.gcount());
     }
 
     std::array<unsigned char, 32> outHash{};
-    SHA256_Final(outHash.data(), &ctx);
+    unsigned int len = 0;
+    EVP_DigestFinal_ex(ctx, outHash.data(), &len);
+    EVP_MD_CTX_free(ctx);
+
     return outHash;
 }
 #endif

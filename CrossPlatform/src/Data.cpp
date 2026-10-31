@@ -9,7 +9,7 @@ const std::array<std::string_view, 10> kCategoryFolders = {
     "+Image", "+Installer", "+Torrent", "+Video", "+_Other"
 };
 
-static const std::unordered_map<std::string_view, std::string_view> kExtToFolder = {.
+static const std::unordered_map<std::string_view, std::string_view> kExtToFolder = {
     // +Archive
     { ".7z", "+Archive" },{ ".bz2", "+Archive" },{ ".cab", "+Archive" },
     { ".gz", "+Archive" },{ ".iso", "+Archive" },{ ".jar", "+Archive" },
