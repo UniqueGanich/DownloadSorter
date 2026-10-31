@@ -2,12 +2,27 @@
 
 ## English
 ### 🚀 How to run?
-1. Extract the archive to any location on your PC.
-2. Run the .exe file.
-3. Select the “Run sorter” option.
-4. As a bonus, you will get detailed statistics in the console after the process finishes.
-5. DO NOT rename the folders created by the program! They will no longer be recognized as "internal" folders.
-6. Deleting folders is ALLOWED. If you don't need a folder and its contents, you can delete them; it won't affect the program's operation.
+### WINDOWS
+1. Download the _Windows archive
+2. Extract the archive to any location on your PC.
+3. Run the .exe file.
+4. Select the “Run sorter” option.
+5. As a bonus, you will get detailed statistics in the console after the process finishes.
+6. DO NOT rename the folders created by the program! They will no longer be recognized as "internal" folders.
+7. Deleting folders is ALLOWED. If you don't need a folder and its contents, you can delete them; it won't affect the program's operation.
+
+### LINUX
+1. Download the _Linux archive
+2. Extract the archive to any location on your PC
+3. Open the terminal in the folder with the downloaded file and enter the command:
+```
+chmod +x DownloadSorter
+```
+4. Run the program
+5. Select the “Run sorter” option
+6. As a bonus, you will get detailed statistics in the console after the process finishes
+7. DO NOT rename the folders created by the program! They will no longer be recognized as "internal" folders
+8. Deleting folders is ALLOWED. If you don't need a folder and its contents, you can delete them; it won't affect the program's operation
 
 ### ⚙️ How does it work?
 Before moving any file, the program verifies that it is not currently locked/running, is older than 24 hours, and is not a temporary file.
@@ -30,12 +45,27 @@ It then moves the file into one of the following folders:
 
 ## Русский
 ### 🚀 Как запустить?
-1. Разархивируйте архив в любое место на вашем ПК
-2. Запустите .exe файл
-3. Выберите пункт "Запустить сортировщик"
-4. Бонусом получите подробную статистику в консоли, после завершения работы
-5. Папки созданные программой переименовывать НЕЛЬЗЯ! Они перестанут считаться "своими"
-6. Удалять папки - МОЖНО. Если вам не нужна папка и её содержимое - удаляйте, на работу программы это не повлияет
+### WINDOWS
+1. Скачайте архив _Windows
+2. Разархивируйте архив в любое место на вашем ПК
+3. Запустите .exe файл
+4. Выберите пункт "Запустить сортировщик"
+5. Бонусом получите подробную статистику в консоли, после завершения работы
+6. Папки созданные программой переименовывать НЕЛЬЗЯ! Они перестанут считаться "своими"
+7. Удалять папки - МОЖНО. Если вам не нужна папка и её содержимое - удаляйте, на работу программы это не повлияет
+
+### LINUX
+1. Скачайте архив _Linux
+2. Разархивируйте архив в любое место на вашем ПК
+3. Откройте терминал в папке со скачанным файлом и введите команду:
+```
+chmod +x DownloadSorter
+```
+5. Запустите программу
+6. Выберите пункт "Запустить сортировщик"
+7. Бонусом получите подробную статистику в консоли, после завершения работы
+8. Папки созданные программой переименовывать НЕЛЬЗЯ! Они перестанут считаться "своими"
+9. Удалять папки - МОЖНО. Если вам не нужна папка и её содержимое - удаляйте, на работу программы это не повлияет
 
 ### ⚙️ А как оно работает?
 1. Перед перемещением файла проверяет чтобы он не был запущен, был старше 24 часов и не был временным файлом
