@@ -2,7 +2,7 @@ name: Build Linux Static
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main"]
   workflow_dispatch:
 
 jobs:
@@ -15,10 +15,12 @@ jobs:
       - name: Build inside Alpine
         run: |
           docker run --rm -v ${{ github.workspace }}:/app -w /app/CrossPlatform alpine:latest sh -c '
-            apk add cmake g++ make openssl-dev openssl-libs-static &&
+            apk add cmake g++ make openssl-dev openssl-libs-static pkgconfig linux-headers &&
             mkdir -p build &&
             cd build &&
-            cmake -DCMAKE_BUILD_TYPE=Release .. &&
+            cmake -DCMAKE_BUILD_TYPE=Release \
+                  -DOPENSSL_USE_STATIC_LIBS=TRUE \
+                  -DCMAKE_EXE_LINKER_FLAGS="-static -ldl" .. &&
             make -j4
           '
 
